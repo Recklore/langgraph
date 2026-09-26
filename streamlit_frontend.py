@@ -1,10 +1,25 @@
 import streamlit as st
 from langchain_core.messages import HumanMessage
 from streamlit_chat_backend import chatbot
+import uuid
+
+# Utils
+def generate_thread_id():
+    thread_id = uuid.uuid4()
+    st.session_state["thread_list"].append(thread_id)
+    return thread_id
 
 
+def resest_chat():
+    st.session_state["thread_id"] = generate_thread_id()
+    st.session_state["message_history"] = []
 
-CONFIG = {"configurable": {"thread_id": "thread-1"}}
+def load_chat(thread_id):
+    st.session_state["thread_id"] = thread_id
+    state = chatbot.get_state(
+        config={"configurable": {"thread_id": thread_id}}
+    )
+    return state.values.get("messages", [])
 
 def stream_text():
     for message_chunk, _ in chatbot.stream(
@@ -24,8 +39,44 @@ def stream_text():
                     if text:
                         yield text
 
+
+# Session state
 if "message_history" not in st.session_state:
     st.session_state["message_history"] = []
+
+if "thread_list" not in st.session_state:
+    st.session_state["thread_list"] = []
+
+if "thread_id" not in st.session_state:
+    st.session_state["thread_id"] = generate_thread_id()
+
+
+# Configs
+CONFIG = {"configurable": {"thread_id": st.session_state["thread_id"]}}
+
+
+# UI
+
+st.sidebar.title("Regular chatbot")
+
+if st.sidebar.button("new chat"):
+    resest_chat()
+
+st.sidebar.header("My conversations")
+for thread_id in st.session_state["thread_list"][::-1]:
+    if st.sidebar.button(thread_id):
+        messages = load_chat(thread_id)
+
+        temp_messages = []
+
+        for msg in messages:
+            if isinstance(msg, HumanMessage):
+                role = "user"
+            else:
+                role = "assistant"
+
+            temp_messages.append({"role": role, "message": msg.content})
+        st.session_state["message_history"] = temp_messages
 
 for message in st.session_state["message_history"]:
     with st.chat_message(message["role"]):
