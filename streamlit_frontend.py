@@ -1,6 +1,6 @@
 import streamlit as st
 from langchain_core.messages import HumanMessage
-from streamlit_chat_backend import chatbot
+from streamlit_chat_backend import chatbot, retrieve_threads
 import uuid
 
 # Utils
@@ -45,7 +45,7 @@ if "message_history" not in st.session_state:
     st.session_state["message_history"] = []
 
 if "thread_list" not in st.session_state:
-    st.session_state["thread_list"] = []
+    st.session_state["thread_list"] = retrieve_threads()
 
 if "thread_id" not in st.session_state:
     st.session_state["thread_id"] = generate_thread_id()
@@ -72,15 +72,17 @@ for thread_id in st.session_state["thread_list"][::-1]:
         for msg in messages:
             if isinstance(msg, HumanMessage):
                 role = "user"
+                content = msg.content
             else:
                 role = "assistant"
+                content = msg.content[0]["text"]
 
-            temp_messages.append({"role": role, "message": msg.content})
+            temp_messages.append({"role": role, "message": content})
         st.session_state["message_history"] = temp_messages
 
 for message in st.session_state["message_history"]:
     with st.chat_message(message["role"]):
-        st.text(message["message"])
+        st.markdown(message["message"])
 
 
 user_input = st.chat_input("type here")
