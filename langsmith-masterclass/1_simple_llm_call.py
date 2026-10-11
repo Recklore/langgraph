@@ -8,7 +8,7 @@ load_dotenv()
 # Simple one-line prompt
 prompt = PromptTemplate.from_template("{question}")
 
-model = ChatGoogleGenerativeAI(model="gemini-3.5-flash")
+model = ChatGoogleGenerativeAI(model="gemini-3.6-flash")
 parser = StrOutputParser()
 
 # Chain: prompt → model → parser
